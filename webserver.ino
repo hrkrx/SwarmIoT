@@ -14,6 +14,15 @@ int minUs = 500;
 int maxUs = 2400;
 int servo1Pin = 32;
 int servoINPUT = 35;
+int ledR = 0;
+int ledG = 0;
+int ledB = 0;
+int ledW = 0;
+int canState = 0;
+int onOff = 0;
+int fein = 0;
+int pulver = 0;
+int groob = 0;
 bool onState = false;
 String currentState = "stop";
 
@@ -42,16 +51,30 @@ void setupPins()
     pinMode(14, OUTPUT); // converter
     pinMode(27, OUTPUT); // converter
     pinMode(26, OUTPUT); // converter
-    pinMode(25, OUTPUT); // converter i/o
+    pinMode(35, OUTPUT); // converter i/o
     pinMode(32, OUTPUT); // servo
-    pinMode(35, INPUT);  // servo in
+    pinMode(servoINPUT, INPUT);  // servo in
 
     setMotor(155);
 }
 void loop()
 {
     server.handleClient();
-    //delay(100);
+    //int i = analogRead(servoINPUT);
+    //int pos = 0;
+    //pos = map(i, 244, 2326, 0, 180);
+    //Serial.println(String(pos) + " | " + String(i));
+    //delay(1000);
+    // if (Serial.available() > 0)
+    // {
+    //     int pos = Serial.parseInt();
+    //     if (pos > 0)
+    //     {
+    //         setMotor(pos);
+    //     }
+    // }
+    
+    
 }
 
 void handleRoot()
@@ -201,19 +224,6 @@ String stateOfServo()
     return data;
 }
 
-void handleSensorServo()
-{
-    // send JSON information about Sensor
-    Serial.println("handleServo");
-    String data = stateOfServo();
-    currentState = data;
-    String jsonData = createJsonAttribute("data", data);
-    String jsonType = createJsonAttribute("type", "String"); // change datatype depending on data!
-    String jsonResponse = "{" + jsonData + ", " + jsonType + "}";
-
-    server.send(200, "text/plain", jsonResponse);
-}
-
 boolean getKoffeeHolderState()
 {
     return digitalRead(14);
@@ -254,10 +264,9 @@ bool setOn()
 bool setPinStateFein()
 {
 
-    digitalWrite(27, HIGH);
-    digitalWrite(25, HIGH);
-    digitalWrite(26, HIGH);
-    digitalWrite(33, HIGH);
+    digitalWrite(fein, LOW);
+    digitalWrite(pulver, HIGH);
+    digitalWrite(grob, HIGH);
 
     setMotor(40);
     return true;
@@ -266,21 +275,21 @@ bool setPinStateFein()
 bool setPinStateGrob()
 {
 
-    digitalWrite(27, HIGH);
-    digitalWrite(25, HIGH);
-    digitalWrite(26, HIGH);
-    digitalWrite(33, HIGH);
+    digitalWrite(fein, HIGH);
+    digitalWrite(pulver, HIGH);
+    digitalWrite(grob, LOW);
+
     setMotor(70);
     return true;
-}
+}HIGH
 
 bool setPinStatePulver()
 {
 
-    digitalWrite(27, HIGH);
-    digitalWrite(25, HIGH);
-    digitalWrite(26, HIGH);
-    digitalWrite(33, HIGH);
+    digitalWrite(fein, HIGH);
+    digitalWrite(pulver, LOW);
+    digitalWrite(grob, HIGH);
+
     setMotor(110);
     return true;
 }
@@ -288,12 +297,25 @@ bool setPinStatePulver()
 bool setPinStateStop()
 {
 
-    digitalWrite(27, HIGH);
-    digitalWrite(25, HIGH);
-    digitalWrite(26, HIGH);
-    digitalWrite(33, HIGH);
+    digitalWrite(fein, HIGH);
+    digitalWrite(pulver, HIGH);
+    digitalWrite(grob, HIGH);
+
     setMotor(155);
     return true;
+}
+
+void handleSensorServo()
+{
+    // send JSON information about Sensor
+    Serial.println("handleServo");
+    String data = stateOfServo();
+    currentState = data;
+    String jsonData = createJsonAttribute("data", data);
+    String jsonType = createJsonAttribute("type", "String"); // change datatype depending on data!
+    String jsonResponse = "{" + jsonData + ", " + jsonType + "}";
+
+    server.send(200, "text/plain", jsonResponse);
 }
 
 void handleFunctionFein()
@@ -447,7 +469,9 @@ void testJsonMethods()
 
 void setMotor(int finish)
 {
-
+    Serial.println("setMotor begin");
+    servo1.attach(servo1Pin, minUs, maxUs);
+    Serial.println(finish);
     int i = analogRead(servoINPUT);
     int pos = 0;
     pos = map(i, 244, 2326, 0, 180);
@@ -459,8 +483,8 @@ void setMotor(int finish)
         { // sweep from 0 degrees to 180 degrees
             // in steps of 1 degree
             servo1.write(pos);
-            delay(20); // waits 20ms for the servo to reach the position
-            Serial.println(pos);
+            delay(100); // waits 20ms for the servo to reach the position
+            //Serial.println(pos);
         }
     }
     else
@@ -470,34 +494,84 @@ void setMotor(int finish)
         { // sweep from 0 degrees to 180 degrees
             servo1.write(pos);
             delay(20); // waits 20ms for the servo to reach the position
-            Serial.println(pos);
+            //Serial.println(pos);
         }
         delay(20); // waits 20ms for the servo to reach the position
-        Serial.println(pos);
+        //Serial.println(pos);
     }
+    
+    i = analogRead(servoINPUT);
+    pos = 0;
+    pos = map(i, 244, 2326, 0, 180);
+
+    Serial.println(pos);
+
+    // if (pos + 5 < finish || pos - 5 > finish)
+    // {
+    //     setMotor(finish);
+    // }
+    
     servo1.detach();
-    servo1.attach(servo1Pin, minUs, maxUs);
+    Serial.println("setMotor end");
 }
 
 void handleFunctionColorLED()
 {
+    bool r, g, b;
+    // set r g b according to get parameters
+    r = server.arg("r") == 1;
+    g = server.arg("g") == 1;
+    b = server.arg("b") == 1;
+
+    setRGBLed(r, g, b);
+
+    String jsonData = createJsonAttribute("result", "success");
+    String jsonResponse = "{" + jsonData + "}";
+
+    server.send(200, "text/plain", jsonResponse);
+}
+
+void handleFunctionSetMotor()
+{
+    int newPos = 0;
+
+    newPos = server.arg("pos").toInt();
+
+    setMotor(newPos);
     
+    String jsonData = createJsonAttribute("result", "success");
+    String jsonResponse = "{" + jsonData + "}";
+
+    server.send(200, "text/plain", jsonResponse);
 }
 
-/*
+void setRGBLed(bool r, bool g, bool b)
+{
+    if (r)
+    {
+        digitalWrite(ledR, LOW);
+    }
+    else
+    {
+        digitalWrite(ledR, HIGH);
+    }
 
-#include <Ultrasonic.h>
+    if (g)
+    {
+        digitalWrite(ledG, LOW);
+    }
+    else
+    {
+        digitalWrite(ledG, HIGH);
+    }
 
-Ultrasonic ultrasonic(12, 13);
-int distance;
-
-void xloop() {
-  // Pass INC as a parameter to get the distance in inches
-  distance = ultrasonic.read();
-  
-  Serial.print("Distance in CM: ");
-  Serial.println(distance);
-  delay(1000);
+    if (b)
+    {
+        digitalWrite(ledB, LOW);
+    }
+    else
+    {
+        digitalWrite(ledB, HIGH);
+    }   
 }
 
-*/
