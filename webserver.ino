@@ -46,14 +46,14 @@ void setup()
 
 void setupPins()
 {
-    pinMode(33, OUTPUT); // converter
-    pinMode(12, OUTPUT); // converter
-    pinMode(14, OUTPUT); // converter
-    pinMode(27, OUTPUT); // converter
-    pinMode(26, OUTPUT); // converter
-    pinMode(35, OUTPUT); // converter i/o
-    pinMode(32, OUTPUT); // servo
-    pinMode(servoINPUT, INPUT);  // servo in
+    pinMode(33, OUTPUT);        // converter
+    pinMode(12, OUTPUT);        // converter
+    pinMode(14, OUTPUT);        // converter
+    pinMode(27, OUTPUT);        // converter
+    pinMode(26, OUTPUT);        // converter
+    pinMode(35, OUTPUT);        // converter i/o
+    pinMode(32, OUTPUT);        // servo
+    pinMode(servoINPUT, INPUT); // servo in
 
     setMotor(155);
 }
@@ -73,8 +73,6 @@ void loop()
     //         setMotor(pos);
     //     }
     // }
-    
-    
 }
 
 void handleRoot()
@@ -281,9 +279,11 @@ bool setPinStateGrob()
 
     setMotor(70);
     return true;
-}HIGH
+}
+HIGH
 
-bool setPinStatePulver()
+    bool
+    setPinStatePulver()
 {
 
     digitalWrite(fein, HIGH);
@@ -483,8 +483,10 @@ void setMotor(int finish)
         { // sweep from 0 degrees to 180 degrees
             // in steps of 1 degree
             servo1.write(pos);
-            delay(100); // waits 20ms for the servo to reach the position
+            delay(20); // waits 20ms for the servo to reach the position
             //Serial.println(pos);
+            int i = analogRead(servoINPUT);
+            pos = map(i, 244, 2326, 0, 180);
         }
     }
     else
@@ -495,11 +497,13 @@ void setMotor(int finish)
             servo1.write(pos);
             delay(20); // waits 20ms for the servo to reach the position
             //Serial.println(pos);
+            int i = analogRead(servoINPUT);
+            pos = map(i, 244, 2326, 0, 180);
         }
         delay(20); // waits 20ms for the servo to reach the position
         //Serial.println(pos);
     }
-    
+
     i = analogRead(servoINPUT);
     pos = 0;
     pos = map(i, 244, 2326, 0, 180);
@@ -510,7 +514,7 @@ void setMotor(int finish)
     // {
     //     setMotor(finish);
     // }
-    
+
     servo1.detach();
     Serial.println("setMotor end");
 }
@@ -538,7 +542,7 @@ void handleFunctionSetMotor()
     newPos = server.arg("pos").toInt();
 
     setMotor(newPos);
-    
+
     String jsonData = createJsonAttribute("result", "success");
     String jsonResponse = "{" + jsonData + "}";
 
@@ -572,6 +576,5 @@ void setRGBLed(bool r, bool g, bool b)
     else
     {
         digitalWrite(ledB, HIGH);
-    }   
+    }
 }
-
