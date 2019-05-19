@@ -35,7 +35,10 @@ int sensorSize = 1;
 String sensors[] = {"sensorServo"};
 
 int functionSize = 8;
-String functions[] = {"functionFein", "functionGrob", "functionPulver", "functionStop", "functionOff", "functionOn", "handleSensorHolderState", "test"};
+String functions[] = {"functionFein", "functionGrob", 
+                      "functionPulver", "functionStop", "functionOff", 
+                      "functionOn", "handleSensorHolderState", "test",
+                      "functionSetMotor", "functionColorLED", "functionWhiteLED"};
 
 void setup()
 {
@@ -139,6 +142,9 @@ void initWebServer()
     server.on("/functionStop", handleFunctionStop);
     server.on("/functionOff", handleFunctionOff);
     server.on("/functionOn", handleFunctionOff);
+    server.on("/functionColorLED", handleFunctionColorLED);
+    server.on("/functionWhiteLED", handleFunctionWhiteLED);
+    server.on("/functionSetMotor", handleFunctionSetMotor);
     server.on("/test", testJsonMethods);
     server.begin();
 }
@@ -305,6 +311,100 @@ bool setPinStateStop()
     return true;
 }
 
+
+void setWhiteLed(bool onoff)
+{
+    if (onoff)
+    {
+        digitalWrite(onOff, HIGH);
+    }
+    else
+    {
+        digitalWrite(onOff, LOW);
+    }
+    
+    
+}
+
+void setRGBLed(bool r, bool g, bool b)
+{
+    if (r)
+    {
+        digitalWrite(ledR, LOW);
+    }
+    else
+    {
+        digitalWrite(ledR, HIGH);
+    }
+
+    if (g)
+    {
+        digitalWrite(ledG, LOW);
+    }
+    else
+    {
+        digitalWrite(ledG, HIGH);
+    }
+
+    if (b)
+    {
+        digitalWrite(ledB, LOW);
+    }
+    else
+    {
+        digitalWrite(ledB, HIGH);
+    }   
+}
+
+
+void setMotor(int finish)
+{
+    Serial.println("setMotor begin");
+    servo1.attach(servo1Pin, minUs, maxUs);
+    Serial.println(finish);
+    int i = analogRead(servoINPUT);
+    int pos = 0;
+    pos = map(i, 244, 2326, 0, 180);
+    Serial.println(pos);
+
+    if (pos < finish)
+    {
+        for (; pos <= finish; pos += 1)
+        { // sweep from 0 degrees to 180 degrees
+            // in steps of 1 degree
+            servo1.write(pos);
+            delay(100); // waits 20ms for the servo to reach the position
+            //Serial.println(pos);
+        }
+    }
+    else
+    {
+        Serial.println("here");
+        for (; pos >= finish; pos -= 1)
+        { // sweep from 0 degrees to 180 degrees
+            servo1.write(pos);
+            delay(20); // waits 20ms for the servo to reach the position
+            //Serial.println(pos);
+        }
+        delay(20); // waits 20ms for the servo to reach the position
+        //Serial.println(pos);
+    }
+    
+    i = analogRead(servoINPUT);
+    pos = 0;
+    pos = map(i, 244, 2326, 0, 180);
+
+    Serial.println(pos);
+
+    // if (pos + 5 < finish || pos - 5 > finish)
+    // {
+    //     setMotor(finish);
+    // }
+    
+    servo1.detach();
+    Serial.println("setMotor end");
+}
+
 void handleSensorServo()
 {
     // send JSON information about Sensor
@@ -467,54 +567,6 @@ void testJsonMethods()
     server.send(200, "text/plain", jsonData);
 }
 
-void setMotor(int finish)
-{
-    Serial.println("setMotor begin");
-    servo1.attach(servo1Pin, minUs, maxUs);
-    Serial.println(finish);
-    int i = analogRead(servoINPUT);
-    int pos = 0;
-    pos = map(i, 244, 2326, 0, 180);
-    Serial.println(pos);
-
-    if (pos < finish)
-    {
-        for (; pos <= finish; pos += 1)
-        { // sweep from 0 degrees to 180 degrees
-            // in steps of 1 degree
-            servo1.write(pos);
-            delay(100); // waits 20ms for the servo to reach the position
-            //Serial.println(pos);
-        }
-    }
-    else
-    {
-        Serial.println("here");
-        for (; pos >= finish; pos -= 1)
-        { // sweep from 0 degrees to 180 degrees
-            servo1.write(pos);
-            delay(20); // waits 20ms for the servo to reach the position
-            //Serial.println(pos);
-        }
-        delay(20); // waits 20ms for the servo to reach the position
-        //Serial.println(pos);
-    }
-    
-    i = analogRead(servoINPUT);
-    pos = 0;
-    pos = map(i, 244, 2326, 0, 180);
-
-    Serial.println(pos);
-
-    // if (pos + 5 < finish || pos - 5 > finish)
-    // {
-    //     setMotor(finish);
-    // }
-    
-    servo1.detach();
-    Serial.println("setMotor end");
-}
-
 void handleFunctionColorLED()
 {
     bool r, g, b;
@@ -545,33 +597,10 @@ void handleFunctionSetMotor()
     server.send(200, "text/plain", jsonResponse);
 }
 
-void setRGBLed(bool r, bool g, bool b)
+void handleFunctionWhiteLED()
 {
-    if (r)
-    {
-        digitalWrite(ledR, LOW);
-    }
-    else
-    {
-        digitalWrite(ledR, HIGH);
-    }
-
-    if (g)
-    {
-        digitalWrite(ledG, LOW);
-    }
-    else
-    {
-        digitalWrite(ledG, HIGH);
-    }
-
-    if (b)
-    {
-        digitalWrite(ledB, LOW);
-    }
-    else
-    {
-        digitalWrite(ledB, HIGH);
-    }   
+    bool onoff = server.arg("on").toInt() == 1;
+    setWhiteLed(onOff);
+    
 }
 
